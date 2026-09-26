@@ -1,6 +1,14 @@
 # LLM 원리 모션그래픽
 
-3Blue1Brown 스타일(검은 배경, 절제된 네온 색, 수식체 숫자)의 **스텝 단위 모션그래픽**. Notion 「4.2 LLM 원리」의 흐름을 따라 9개 장면, 36스텝으로 구성했다.
+3Blue1Brown 스타일(검은 배경, 절제된 네온 색, 수식체 숫자)의 **스텝 단위 모션그래픽**. Notion 「4.2 LLM 원리」의 흐름을 따라 만들었다.
+
+- **배포 주소:** https://llm-motion-graphic.vercel.app (처음 열면 버전 선택 화면)
+- **기본 버전** `?v=full` — 9개 장면, 36스텝
+- **초보자 버전** `?v=basic` — 8개 장면, 30스텝. 기본 버전에서 다음을 덜어냈다.
+  - 2장면의 확률 함수 수식 스텝 `P(…|…)`
+  - 7장면 트랜스포머 + 8장면 어텐션 → '문맥 읽기' 한 장면(3스텝)으로 합쳐 비유만 남김 (`scenes/08b_context_basic.js`)
+  - 9장면의 전체 흐름(문장→벡터→레이어→확률) 스텝
+- 발표 중 `V` 키로 두 버전을 오갈 수 있다. 배포는 `vercel deploy --prod` (이 폴더에서, export/ 는 제외됨).
 
 ## 쓰는 방법 두 가지
 
@@ -17,6 +25,7 @@
 | `0`~`9`, `G` | 장면 바로가기, 장면 목록 |
 | `C` / `T` | 하단 자막 / 좌상단 장면 제목 켜고 끄기 |
 | `B` | 검은 화면 |
+| `V` | 기본 ↔ 초보자 버전 전환 |
 | `?` | 키 안내 |
 
 발표용 리모컨(클리커)은 PageDown/PageUp을 보내므로 그대로 쓸 수 있다. 주소 끝의 `#번호`가 현재 스텝이라서 새로고침해도 그 위치에서 다시 시작한다. `index.html#18` 처럼 특정 스텝으로 바로 열 수도 있다.
@@ -44,6 +53,7 @@
 ## 고치고 다시 뽑기
 
 - 장면 코드: `scenes/NN_*.js`. 각 장면의 `steps` 배열이 스텝 목록이다(`d` = 재생 시간(초), `n` = 메모).
+- 버전 구분: 장면에 `only: 'full' | 'basic'`, 스텝에 `skipBasic: true` 를 붙이면 된다. 장면 코드 안에서는 `MG.variant` 로 분기한다.
 - 공통 도구: `engine.js`. 색, 글자 쓰기 효과, 화살표, 확률 막대, 3D 레이어 블록, 재생기가 들어 있다.
 - 영상과 PPT 다시 만들기 (node, ffmpeg, python-pptx 필요):
 
@@ -54,6 +64,9 @@ node render.mjs clips            # 스텝별 MP4 (약 5분)
 python3 make_pptx.py             # PPTX
 node render.mjs full             # (선택) 전체를 이어 붙인 MP4 한 개
 node render.mjs snap 18 22.5     # (검수용) 특정 위치의 PNG
+node render.mjs scenes --fps 30 --hold 1.2   # 장면마다 MP4 한 개 (Notion 삽입용)
 ```
+
+모든 명령에 `--v basic` 을 붙이면 초보자 버전으로 뽑힌다(`clips_basic/`, `LLM원리_모션그래픽_basic.pptx` 등). PPTX는 `python3 make_pptx.py --v basic`.
 
 `--fps 30` 을 붙이면 파일이 더 작아지고 렌더도 빨라진다.

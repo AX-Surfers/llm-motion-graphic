@@ -26,7 +26,7 @@
     steps: [
       { d: 2.4, n: '미완성 문장' },
       { d: 3.0, n: '후보 단어마다 확률' },
-      { d: 2.8, n: 'LLM = 확률 함수' },
+      { d: 2.8, n: 'LLM = 확률 함수', skipBasic: true },
       { d: 3.4, n: '확률에 따라 뽑기 ①' },
       { d: 3.8, n: '다시 뽑으면 ②' },
     ],
@@ -91,7 +91,7 @@
       flyTo('먹을까', C.teal, L.sub(p5, 0.76, 0.93), 1, Y);
 
       // ---- 확률 함수 표기 ----
-      const fa = L.vis(S, 3, 4, 0, 0.3, 0, 0.2);
+      const fa = MG.variant === 'basic' ? 0 : L.vis(S, 3, 4, 0, 0.3, 0, 0.2);
       if (fa > 0) {
         const segs = [
           { t: 'P', o: { size: 60, font: 'math', color: C.white } },
@@ -115,7 +115,7 @@
       }
 
       L.caption('다음 단어 후보마다 {y|확률}을 매긴다', cap(S, 2, 3));
-      L.caption('LLM = 다음 단어의 확률을 계산하는 {b|함수}', cap(S, 3, 4));
+      if (MG.variant !== 'basic') L.caption('LLM = 다음 단어의 확률을 계산하는 {b|함수}', cap(S, 3, 4));
       L.caption('보통은 1등, 가끔은 2·3등도 — {y|확률에 따라} 뽑는다', cap(S, 4, 5));
       L.caption('그래서 같은 질문에도 답이 {y|조금씩 달라진다}', cap(S, 5));
     },

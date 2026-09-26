@@ -6,3 +6,8 @@ export/*.pptx
 export/*.mp4
 export/*.log
 .DS_Store
+export/scenes/
+export/clips_basic/
+export/snaps_basic/
+export/scenes_basic/
+.vercel

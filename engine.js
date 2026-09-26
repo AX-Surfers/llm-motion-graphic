@@ -452,6 +452,12 @@
   const MG = (window.MG = window.MG || {});
   MG.W = W; MG.H = H; MG.C = C; MG.scenes = [];
   MG.scene = (def) => MG.scenes.push(def);
+  // 버전: 기본(full) / 초보자(basic). 주소의 ?v=basic 으로 고른다.
+  const qv = new URLSearchParams(location.search).get('v');
+  MG.variant = qv === 'basic' ? 'basic' : 'full';
+  MG.chosen = qv === 'basic' || qv === 'full';
+  MG.active = [];
+  const titleOf = (sc) => (MG.variant === 'basic' && sc.titleBasic) || sc.title;
   MG.lib = {
     C, clamp, lerp, sub, ease, easeOut, easeIn, easeInOut, back, rnd, st, vis, rgba, mix, hexRgb,
     text, writeText, fadeText, rich, richWidth, tw, rect, circle, line, arrow, pathLine, qbez, cbez, glowDot, dial,
@@ -463,14 +469,21 @@
   let flat = [], N = 0;
   function build() {
     flat = [];
-    MG.scenes.forEach((sc, si) => sc.steps.forEach((s, li) => flat.push({ si, li: li + 1, d: s.d, n: s.n })));
+    const vb = MG.variant === 'basic';
+    // only: 'full' | 'basic' 로 장면을, skipBasic 으로 스텝을 버전별로 고른다
+    MG.active = MG.scenes.filter((sc) => !sc.only || sc.only === MG.variant);
+    MG.active.forEach((sc, si) => {
+      const lis = sc.steps.map((_, i) => i + 1).filter((li) => !(vb && sc.steps[li - 1].skipBasic));
+      sc._first = lis[0]; sc._last = lis[lis.length - 1];
+      lis.forEach((li) => { const s = sc.steps[li - 1]; flat.push({ si, li, d: s.d, n: s.n }); });
+    });
     N = flat.length;
     let t = 0; flat.forEach((f) => { f.t0 = t; t += f.d; });
   }
 
   function drawChapter(sc, alpha) {
-    if (!opts.chapters || !sc.title || alpha <= 0.003) return;
-    const [num, name] = sc.title;
+    if (!opts.chapters || !titleOf(sc) || alpha <= 0.003) return;
+    const [num, name] = titleOf(sc);
     text(num, 80, 76, { size: 30, font: 'serif', color: C.grey, alpha });
     text(name, 80 + tw(num, { size: 30, font: 'serif' }) + 16, 77, { size: 27, weight: 500, color: C.grey, alpha });
   }
@@ -485,7 +498,7 @@
     ctx.save();
     sc.draw(S, T);
     ctx.restore();
-    drawChapter(sc, sc.title ? vis(S, 1) : 0);
+    drawChapter(sc, titleOf(sc) ? vis(S, 1) : 0);
   }
 
   // P: 전역 연속 위치 (0..N), T: 앰비언트 시간(초)
@@ -495,13 +508,13 @@
     if (P > 0 && N > 0) {
       const gi = Math.min(N, Math.max(1, Math.ceil(P - 1e-9)));
       const p = clamp(P - (gi - 1));
-      const f = flat[gi - 1], sc = MG.scenes[f.si];
+      const f = flat[gi - 1], sc = MG.active[f.si];
       let S = f.li - 1 + p;
-      if (f.li === 1 && f.si > 0) {
-        const prev = MG.scenes[f.si - 1];
+      if (f.li === sc._first && f.si > 0) {
+        const prev = MG.active[f.si - 1];
         const fa = 1 - ease(sub(p, 0, 0.3));
-        if (fa > 0.003) { ctx.save(); ctx.globalAlpha = fa; drawScene(prev, prev.steps.length, T); ctx.restore(); }
-        S = sub(p, 0.26, 1);
+        if (fa > 0.003) { ctx.save(); ctx.globalAlpha = fa; drawScene(prev, prev._last, T); ctx.restore(); }
+        S = f.li - 1 + sub(p, 0.26, 1);
       }
       drawScene(sc, S, T);
     }
@@ -563,16 +576,17 @@
   function updateHud() {
     if (EXPORT) return;
     const g = Math.max(1, restIndex()), f = flat[g - 1]; if (!f) return;
-    const sc = MG.scenes[f.si];
-    $('hud-scene').textContent = (sc.title ? sc.title.join('  ') : '표지');
+    const sc = MG.active[f.si];
+    $('hud-ver').textContent = MG.variant === 'basic' ? '초보자 버전' : '기본 버전';
+    $('hud-scene').textContent = (titleOf(sc) ? titleOf(sc).join('  ') : '표지');
     $('hud-step').textContent = `${f.li} / ${sc.steps.length} · ${f.n || ''}`;
     $('hud-count').textContent = `${g} / ${N}`;
     const bar = $('hud-bar');
     if (bar.childElementCount !== N) {
       bar.innerHTML = '';
       flat.forEach((ff, i) => {
-        const d = document.createElement('div'); d.className = 'seg' + (ff.li === 1 ? ' first' : '');
-        d.title = `${i + 1}. ${(MG.scenes[ff.si].title || ['', '표지']).join(' ')} — ${ff.n || ''}`;
+        const d = document.createElement('div'); d.className = 'seg' + (ff.li === MG.active[ff.si]._first ? ' first' : '');
+        d.title = `${i + 1}. ${(titleOf(MG.active[ff.si]) || ['', '표지']).join(' ')} — ${ff.n || ''}`;
         d.onclick = (ev) => { ev.stopPropagation(); jumpState(i + 1); };
         bar.appendChild(d);
       });
@@ -586,16 +600,20 @@
   }
   function buildMenu() {
     const m = $('menu-list'); m.innerHTML = '';
-    MG.scenes.forEach((sc, si) => {
+    MG.active.forEach((sc, si) => {
       const b = document.createElement('button');
-      b.innerHTML = `<b>${sc.title ? sc.title[0] : '0'}</b><span>${sc.title ? sc.title[1] : '표지'}</span><i>${sc.steps.length} 스텝</i>`;
+      const tt = titleOf(sc), ns = flat.filter((f) => f.si === si).length;
+      b.innerHTML = `<b>${tt ? tt[0] : '0'}</b><span>${tt ? tt[1] : '표지'}</span><i>${ns} 스텝</i>`;
       b.onclick = (ev) => { ev.stopPropagation(); toggle('menu', false); jumpScene(si); };
       m.appendChild(b);
     });
   }
   function toggle(id, force) { const el = $(id); const on = force === undefined ? !el.classList.contains('open') : force; el.classList.toggle('open', on); }
 
+  function switchVariant(v) { location.href = location.pathname + '?v=' + v; }
+  MG.switchVariant = switchVariant;
   function onKey(e) {
+    if (!MG.chosen && !EXPORT) { if (e.key === '1') switchVariant('full'); else if (e.key === '2') switchVariant('basic'); return; }
     const k = e.key;
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     if ($('menu').classList.contains('open') && k === 'Escape') { toggle('menu', false); return; }
@@ -613,6 +631,7 @@
     else if (k === 'b' || k === 'B' || k === '.') black = !black;
     else if (k === 'g' || k === 'G' || k === 'm' || k === 'M') toggle('menu');
     else if (k === '?' || k === '/') toggle('help');
+    else if (k === 'v' || k === 'V') switchVariant(MG.variant === 'basic' ? 'full' : 'basic');
     else if (/^[0-9]$/.test(k)) jumpScene(parseInt(k, 10));
     else return;
     pokeHud(); updateHud();
@@ -644,7 +663,7 @@
     await loadFonts();
     mcache.clear();
     // 외부(영상 추출 스크립트)용 API
-    MG.steps = () => flat.map((f, i) => ({ g: i + 1, scene: f.si, local: f.li, d: f.d, t0: f.t0, note: f.n, title: (MG.scenes[f.si].title || ['0', '표지']).join(' ') }));
+    MG.steps = () => flat.map((f, i) => ({ g: i + 1, scene: f.si, local: f.li, d: f.d, t0: f.t0, note: f.n, title: (titleOf(MG.active[f.si]) || ['0', '표지']).join(' ') }));
     MG.renderStep = (g, t) => { const f = flat[g - 1]; const p = clamp(t / f.d); paint(g - 1 + p, f.t0 + t); };
     MG.renderState = (P, T) => paint(P, T);
     MG.seek = (P) => { anim = null; pos = clamp(P, 0, N); updateHud(); }; // 디버그용: 연속 위치로 이동
@@ -659,7 +678,12 @@
     $('help').addEventListener('click', () => toggle('help', false));
     $('hud-scene').addEventListener('click', (e) => { e.stopPropagation(); toggle('menu'); });
     const h = parseInt((location.hash || '').slice(1), 10);
-    if (h >= 1 && h <= N) { pos = h; sync(); } else { pos = 0; start(0, 1, flat[0].d); }
+    document.querySelectorAll('[data-variant]').forEach((b) => b.addEventListener('click', (e) => { e.stopPropagation(); switchVariant(b.dataset.variant); }));
+    const nFull = MG.scenes.filter((sc) => sc.only !== 'basic').reduce((a, sc) => a + sc.steps.length, 0);
+    const nBasic = MG.scenes.filter((sc) => sc.only !== 'full').reduce((a, sc) => a + sc.steps.filter((s) => !s.skipBasic).length, 0);
+    $('n-full').textContent = nFull; $('n-basic').textContent = nBasic;
+    if (!MG.chosen && !(h >= 1)) { document.body.classList.add('choosing'); pos = 0; }
+    else if (h >= 1 && h <= N) { pos = h; sync(); } else { pos = 0; start(0, 1, flat[0].d); }
     updateHud(); pokeHud();
     MG.ready = true;
     requestAnimationFrame(loop);

@@ -6,6 +6,7 @@
 """
 import json
 import os
+import sys
 from copy import deepcopy
 
 from lxml import etree
@@ -13,8 +14,9 @@ from pptx import Presentation
 from pptx.util import Emu
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-CLIPS = os.path.join(HERE, "clips")
-OUT = os.path.join(HERE, "LLM원리_모션그래픽.pptx")
+SUF = "_basic" if "--v" in sys.argv and sys.argv[sys.argv.index("--v") + 1] == "basic" else ""  # --v basic → 초보자 버전
+CLIPS = os.path.join(HERE, "clips" + SUF)
+OUT = os.path.join(HERE, f"LLM원리_모션그래픽{SUF}.pptx")
 NS = "http://schemas.openxmlformats.org/presentationml/2006/main"
 
 TIMING = """<p:timing xmlns:p="{ns}">

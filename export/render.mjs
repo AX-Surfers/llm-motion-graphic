@@ -21,6 +21,8 @@ const opt = (name, def) => { const i = args.indexOf('--' + name); return i >= 0 
 const FPS = +opt('fps', 60);
 const TAIL = +opt('tail', 0.4);
 const HOLD = +opt('hold', 1.0);
+const V = opt('v', 'full') === 'basic' ? 'basic' : 'full'; // --v basic → 초보자 버전
+const SUF = V === 'basic' ? '_basic' : '';
 
 async function openPage() {
   const launch = { args: ['--force-device-scale-factor=1', '--disable-gpu-vsync'] };
@@ -29,7 +31,7 @@ async function openPage() {
   catch { browser = await chromium.launch(launch); }
   const page = await browser.newPage({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 });
   page.on('pageerror', (e) => console.error('[page error]', e.message));
-  await page.goto(pathToFileURL(path.join(ROOT, 'index.html')).href + '?export=1');
+  await page.goto(pathToFileURL(path.join(ROOT, 'index.html')).href + '?export=1&v=' + V);
   await page.waitForFunction(() => window.MG && window.MG.ready === true, null, { timeout: 30000 });
   const steps = await page.evaluate(() => MG.steps());
   return { browser, page, steps };
@@ -48,12 +50,12 @@ const clipName = (s) => `${pad(s.g)}_장면${s.scene}-${s.local}`;
 
 async function snap(positions) {
   const { browser, page, steps } = await openPage();
-  fs.mkdirSync(path.join(HERE, 'snaps'), { recursive: true });
+  fs.mkdirSync(path.join(HERE, 'snaps' + SUF), { recursive: true });
   for (const P of positions) {
     const gi = Math.max(1, Math.ceil(P - 1e-9)), s = steps[gi - 1];
     const T = s.t0 + (P - (gi - 1)) * s.d;
     await page.evaluate(([P, T]) => MG.renderState(P, T), [P, T]);
-    const out = path.join(HERE, 'snaps', `pos_${String(P).replace('.', '_')}.png`);
+    const out = path.join(HERE, 'snaps' + SUF, `pos_${String(P).replace('.', '_')}.png`);
     fs.writeFileSync(out, await grab(page));
     console.log(out);
   }
@@ -62,7 +64,7 @@ async function snap(positions) {
 
 async function clips() {
   const { browser, page, steps } = await openPage();
-  const dir = path.join(HERE, 'clips');
+  const dir = path.join(HERE, 'clips' + SUF);
   fs.mkdirSync(dir, { recursive: true });
   const from = +opt('from', 1), to = +opt('to', steps.length);
   const t0 = Date.now();
@@ -87,7 +89,7 @@ async function clips() {
 
 async function full() {
   const { browser, page, steps } = await openPage();
-  const out = path.join(HERE, 'LLM원리_전체.mp4');
+  const out = path.join(HERE, `LLM원리_전체${SUF}.mp4`);
   const proc = ffmpeg(out);
   const t0 = Date.now();
   for (const s of steps) {
@@ -103,7 +105,31 @@ async function full() {
   console.log(out);
 }
 
-if (mode === 'snap') await snap(args.slice(1).filter((a) => !a.startsWith('--')).map(Number));
+// 장면마다 MP4 한 개 (스텝 사이 HOLD 초 정지) — Notion·문서 삽입용
+async function scenes() {
+  const { browser, page, steps } = await openPage();
+  const dir = path.join(HERE, 'scenes' + SUF);
+  fs.mkdirSync(dir, { recursive: true });
+  const ids = [...new Set(steps.map((s) => s.scene))];
+  for (const sc of ids) {
+    const ss = steps.filter((s) => s.scene === sc);
+    const out = path.join(dir, `장면${sc}_${ss[0].title.replace(/^\d+\s*/, '').replace(/[\s:=/]+/g, '_')}.mp4`);
+    const proc = ffmpeg(out);
+    for (const s of ss) {
+      const n = Math.round((s.d + HOLD) * FPS);
+      for (let f = 0; f < n; f++) {
+        await page.evaluate(([g, t]) => MG.renderStep(g, t), [s.g, f / FPS]);
+        await feed(proc, await grab(page));
+      }
+    }
+    await finish(proc);
+    console.log(out, (fs.statSync(out).size / 1e6).toFixed(1) + 'MB');
+  }
+  await browser.close();
+}
+
+if (mode === 'scenes') await scenes();
+else if (mode === 'snap') await snap(args.slice(1).map(Number).filter((n) => !Number.isNaN(n)));
 else if (mode === 'clips') await clips();
 else if (mode === 'full') await full();
 else console.log(fs.readFileSync(fileURLToPath(import.meta.url), 'utf8').split('\n').slice(0, 10).join('\n'));

@@ -24,7 +24,7 @@
   }
 
   MG.scene({
-    id: 'transformer', title: ['7', '트랜스포머'],
+    id: 'transformer', only: 'full', title: ['7', '트랜스포머'],
     steps: [
       { d: 5.0, n: '예전: 한 단어씩 순서대로' },
       { d: 3.6, n: '트랜스포머: 문장 전체를 한 번에' },

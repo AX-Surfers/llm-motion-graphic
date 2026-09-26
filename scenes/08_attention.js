@@ -51,7 +51,7 @@
   }
 
   MG.scene({
-    id: 'attention', title: ['8', '어텐션: 문맥 읽기'],
+    id: 'attention', only: 'full', title: ['8', '어텐션: 문맥 읽기'],
     steps: [
       { d: 3.4, n: '단어 → 숫자 목록(벡터)' },
       { d: 3.8, n: '의미 공간: 비슷한 뜻 = 비슷한 방향' },
