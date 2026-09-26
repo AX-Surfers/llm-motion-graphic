@@ -1,0 +1,8 @@
+# 다시 만들 수 있는 산출물 (export/README 참고)
+export/node_modules/
+export/clips/
+export/snaps/
+export/*.pptx
+export/*.mp4
+export/*.log
+.DS_Store
