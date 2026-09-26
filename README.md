@@ -26,6 +26,7 @@
 | `C` / `T` | 하단 자막 / 좌상단 장면 제목 켜고 끄기 |
 | `B` | 검은 화면 |
 | `V` | 기본 ↔ 초보자 버전 전환 |
+| `L` | 오른쪽 위 서퍼스 로고 켜기/끄기 |
 | `?` | 키 안내 |
 
 발표용 리모컨(클리커)은 PageDown/PageUp을 보내므로 그대로 쓸 수 있다. 주소 끝의 `#번호`가 현재 스텝이라서 새로고침해도 그 위치에서 다시 시작한다. `index.html#18` 처럼 특정 스텝으로 바로 열 수도 있다.
@@ -66,6 +67,8 @@ node render.mjs full             # (선택) 전체를 이어 붙인 MP4 한 개
 node render.mjs snap 18 22.5     # (검수용) 특정 위치의 PNG
 node render.mjs scenes --fps 30 --hold 1.2   # 장면마다 MP4 한 개 (Notion 삽입용)
 ```
+
+영상에 로고를 넣으려면 `--logo` 를 붙인다(기본은 로고 없이 추출).
 
 모든 명령에 `--v basic` 을 붙이면 초보자 버전으로 뽑힌다(`clips_basic/`, `LLM원리_모션그래픽_basic.pptx` 등). PPTX는 `python3 make_pptx.py --v basic`.
 

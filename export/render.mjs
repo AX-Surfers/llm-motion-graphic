@@ -31,7 +31,7 @@ async function openPage() {
   catch { browser = await chromium.launch(launch); }
   const page = await browser.newPage({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 });
   page.on('pageerror', (e) => console.error('[page error]', e.message));
-  await page.goto(pathToFileURL(path.join(ROOT, 'index.html')).href + '?export=1&v=' + V);
+  await page.goto(pathToFileURL(path.join(ROOT, 'index.html')).href + '?export=1&v=' + V + (args.includes('--logo') ? '&logo=1' : ''));
   await page.waitForFunction(() => window.MG && window.MG.ready === true, null, { timeout: 30000 });
   const steps = await page.evaluate(() => MG.steps());
   return { browser, page, steps };

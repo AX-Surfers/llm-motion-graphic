@@ -465,7 +465,15 @@
     get ctx() { return ctx; },
   };
 
-  const opts = { captions: true, chapters: true, hud: true };
+  const opts = { captions: true, chapters: true, hud: true, logo: true };
+  // 오른쪽 위 서퍼스 로고 (영상 추출 때는 ?logo=1 일 때만)
+  let logoImg = null;
+  if (window.MG_LOGO_SVG) { logoImg = new Image(); logoImg.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(window.MG_LOGO_SVG); }
+  function drawLogo() {
+    if (!opts.logo || !logoImg || !logoImg.complete || !logoImg.naturalWidth) return;
+    const h = 30, w = h * (logoImg.naturalWidth / logoImg.naturalHeight);
+    ctx.save(); ctx.globalAlpha = 0.8; ctx.drawImage(logoImg, W - 80 - w, 76 - h / 2, w, h); ctx.restore();
+  }
   let flat = [], N = 0;
   function build() {
     flat = [];
@@ -518,6 +526,7 @@
       }
       drawScene(sc, S, T);
     }
+    drawLogo();
     ctx.restore();
   }
 
@@ -629,6 +638,7 @@
     else if (k === 't' || k === 'T') opts.chapters = !opts.chapters;
     else if (k === 'h' || k === 'H') { opts.hud = !opts.hud; document.body.classList.toggle('hud-off', !opts.hud); }
     else if (k === 'b' || k === 'B' || k === '.') black = !black;
+    else if (k === 'l' || k === 'L') opts.logo = !opts.logo;
     else if (k === 'g' || k === 'G' || k === 'm' || k === 'M') toggle('menu');
     else if (k === '?' || k === '/') toggle('help');
     else if (k === 'v' || k === 'V') switchVariant(MG.variant === 'basic' ? 'full' : 'basic');
@@ -668,7 +678,7 @@
     MG.renderState = (P, T) => paint(P, T);
     MG.seek = (P) => { anim = null; pos = clamp(P, 0, N); updateHud(); }; // 디버그용: 연속 위치로 이동
     MG.N = N;
-    if (EXPORT) { document.body.classList.add('export'); MG.ready = true; return; }
+    if (EXPORT) { opts.logo = params.get('logo') === '1'; if (logoImg && !logoImg.complete) await logoImg.decode().catch(() => {}); document.body.classList.add('export'); MG.ready = true; return; }
     buildMenu();
     window.addEventListener('resize', resize);
     window.addEventListener('keydown', onKey);
