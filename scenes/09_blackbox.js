@@ -20,7 +20,7 @@
     '왜 그렇게 답했는지는 만든 사람도 설명하기 어렵다 — {y|블랙박스}',
   ];
   const SUMMARY_BASIC = [...SUMMARY];
-  SUMMARY_BASIC[3] = '문장 전체를 한 번에 보고, {b|주변 단어(문맥)}로 뜻을 정한다';
+  SUMMARY_BASIC[3] = 'LLM은 문장을 한 단어씩이 아니라 {b|통째로 한 번에} 본다';
   const bump = (x) => Math.exp(-x * x * 1.1);
   const NL = 90; // 블랙박스 안의 얽힌 연결선
 
