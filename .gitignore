@@ -1,13 +1,10 @@
-# 다시 만들 수 있는 산출물 (export/README 참고)
-export/node_modules/
-export/clips/
-export/snaps/
-export/*.pptx
-export/*.mp4
-export/*.log
+# 다시 만들 수 있는 산출물 (각 폴더의 README 참고)
+**/export/node_modules/
+**/export/clips*/
+**/export/snaps*/
+**/export/scenes*/
+**/export/*.pptx
+**/export/*.mp4
+**/export/*.log
 .DS_Store
-export/scenes/
-export/clips_basic/
-export/snaps_basic/
-export/scenes_basic/
 .vercel
