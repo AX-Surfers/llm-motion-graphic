@@ -60,12 +60,17 @@
   .card .meta { margin-top: 16px; color: #6e6e6e; font-size: 13.5px; }
   .card .meta kbd { margin-right: 4px; }
   kbd { font-family: inherit; background: #222; border: 1px solid #3a3a3a; border-bottom-width: 2px; border-radius: 5px; padding: 1px 7px; font-size: 13px; color: #eee; }
+  #hud-home { color: #bdbdbd; text-decoration: none; font-weight: 600; border: 1px solid #3a3a3a; border-radius: 6px; padding: 1px 9px; }
+  #hud-home:hover { color: #000; background: #FFD84D; border-color: #FFD84D; }
+  #start .home-link { position: absolute; top: 22px; left: 24px; color: #8c8c8c; text-decoration: none; font-size: 15px; font-weight: 600; padding: 6px 12px; border: 1px solid #333; border-radius: 8px; transition: color .2s, border-color .2s; }
+  #start .home-link:hover { color: #fff; border-color: #FFD84D; }
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
 
 <div id="start">
+  <a class="home-link" href="../">← 모든 이론</a>
   <img class="brand" src="brand/surfers-logo.svg" alt="SURFERS">
   <h1>LLM은 어떻게 말을 할까?</h1>
   <p class="sub">Large Language Model</p>
@@ -88,6 +93,7 @@
 <div id="hud">
   <div id="hud-bar"></div>
   <div id="hud-info">
+    <a id="hud-home" href="../" title="이론 선택 화면으로">← 홈</a>
     <span id="hud-ver"></span>
     <span id="hud-scene"></span>
     <span id="hud-step"></span>
